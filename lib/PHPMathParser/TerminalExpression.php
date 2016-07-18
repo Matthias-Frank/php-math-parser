@@ -12,7 +12,7 @@ abstract class TerminalExpression {
 
     public static function factory($value) {
 
-        var_dump($value);
+        
         if (is_object($value) && $value instanceof TerminalExpression) {
             return $value;
         } elseif (is_numeric($value)) {
