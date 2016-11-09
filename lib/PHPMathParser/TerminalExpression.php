@@ -10,16 +10,18 @@ abstract class TerminalExpression {
         $this->value = $value;
     }
 
-    public static function factory($value) {
-
-        
+    public static function factory($value, $oldvalue) {        
         if (is_object($value) && $value instanceof TerminalExpression) {
             return $value;
         } elseif (is_numeric($value)) {
             return new Number($value);
         } elseif ($value == '+') {
+            if (is_null($oldvalue) || $oldvalue->isOperator() || $oldvalue->isUnary() || $oldvalue->isParenthesis() && $oldvalue->isOpen())
+                return new Unary($value);
             return new Addition($value);
         } elseif ($value == '-') {
+            if (is_null($oldvalue) || $oldvalue->isOperator() || $oldvalue->isUnary() || ($oldvalue->isParenthesis() && $oldvalue->isOpen()))
+                return new Unary($value);
             return new Subtraction($value);
         } elseif ($value == '*') {
             return new Multiplication($value);
@@ -48,6 +50,14 @@ abstract class TerminalExpression {
     }
 
     public function render() {
+        return $this->value;
+    }
+
+    public function isUnary() {
+        return false;
+    }
+
+    public function __toString(){
         return $this->value;
     }
 }

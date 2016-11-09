@@ -32,6 +32,9 @@ class Number extends TerminalExpression {
     public function operate(Stack $stack) {
         return $this->value;
     }
+    public function __toString(){
+        return strval($this->value);
+    }
 
 }
 
@@ -106,5 +109,31 @@ class Power extends Operator {
         $left = $stack->pop()->operate($stack);
         $right = $stack->pop()->operate($stack);
         return pow($right,$left);
+    }
+}
+
+class Unary extends Operator {
+
+    protected $precedence = 7;
+
+    public function isUnary() {
+        return true;
+    }
+
+    public function isNegative() {
+        return $this->value == '-';
+    }
+
+    public function __toString() {
+        return "u".$this->value;
+    }
+
+    public function operate(Stack $stack) {
+        $next = $stack->pop()->operate($stack);
+        if ($this->isNegative()) {
+            
+            return -$next;
+        }
+        return $next;
     }
 }

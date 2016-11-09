@@ -6,22 +6,41 @@ require_once 'Stack.php';
 require_once 'TerminalExpression.php';
 require_once 'Expressions.php';
 
+
+
+
+
 class Math {
 
     protected $variables = array();
+    private $debug = false;
 
     public function evaluate($string) {
         $stack = $this->parse($string);
         return $this->run($stack);
     }
 
+    public function setDebug($boolean) {
+        $this->debug = $boolean;
+    }
+
+    public function getDebug() {
+        return $this->debug;
+    }
+
     public function parse($string) {
         $tokens = $this->tokenize($string);
         $output = new Stack();
         $operators = new Stack();
+        $expression = null;
+        if ($this->debug) {
+            $mask = " %10.10s | %50.50s | %50.50s \n";
+            echo "\n";
+            printf($mask, 'Expression', 'Output                      ', 'Operators                    ');
+        }
         foreach ($tokens as $token) {
             $token = $this->extractVariables($token);
-            $expression = TerminalExpression::factory($token);
+            $expression = TerminalExpression::factory($token, $expression);
             if ($expression->isOperator()) {
                 $this->parseOperator($expression, $output, $operators);
             } elseif ($expression->isParenthesis()) {
@@ -29,12 +48,19 @@ class Math {
             } else {
                 $output->push($expression);
             }
+            if ($this->debug)
+                printf($mask, $expression, $output, $operators);
         }
         while (($op = $operators->pop())) {
             if ($op->isParenthesis()) {
                 throw new \RuntimeException('Mismatched Parenthesis');
             }
             $output->push($op);
+            if ($this->debug)
+                printf($mask, $expression, $output, $operators);
+        }
+        if ($this->debug) {
+            echo "\n Der fertige Stack: ".$output."\n";
         }
         return $output;
     }
@@ -47,7 +73,7 @@ class Math {
         while (($operator = $stack->pop()) && $operator->isOperator()) {
             $value = $operator->operate($stack);
             if (!is_null($value)) {
-                $stack->push(TerminalExpression::factory($value));
+                $stack->push(TerminalExpression::factory($value,null));
             }
         }
         return $operator ? $operator->render() : $this->render($stack);
@@ -95,7 +121,7 @@ class Math {
         $end = $operators->poke();
         if (!$end) {
             $operators->push($expression);
-        } elseif ($end->isOperator()) {
+        } elseif (!$expression->isUnary() && $end->isOperator()) {
             do {
                 if ($expression->isLeftAssoc() && $expression->getPrecedence() <= $end->getPrecedence()) {
                     $output->push($operators->pop());
@@ -106,7 +132,15 @@ class Math {
                 }
             } while (($end = $operators->poke()) && $end->isOperator());
             $operators->push($expression);
-        } else {
+        } elseif ($expression->isUnary() && $end->isUnary()) {
+            if ($expression->isNegative() == $end->isNegative()) //very intruiging
+                $operators->pop();
+            elseif ($expression->isNegative()) {
+                $operators->pop();
+                $operators->push($expression);
+            }
+        } 
+          else {
             $operators->push($expression);
         }
     }

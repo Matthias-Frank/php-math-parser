@@ -18,4 +18,17 @@ class Stack {
         return array_pop($this->data);
     }
 
+    public function __toString(){
+        $string ="]";
+        foreach ($this->data as $value) {
+            if (!($string == "]"))
+                $string = "; ".$string;
+            $string = $value." ".$string;
+
+        
+        }
+        $string = "[ ".$string;
+        return $string;
+    }
+
 }
